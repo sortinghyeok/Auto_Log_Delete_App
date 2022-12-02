@@ -153,7 +153,7 @@ namespace AutoDeleteProgram
         }
         private bool IsDeletionTime(DateTime currentTime)
         {
-            if (currentTime.Hour == 10)/*(currentTime.Hour == 0 && currentTime.Minute == 0)*/
+            if (currentTime.Hour == 17)/*(currentTime.Hour == 0 && currentTime.Minute == 0)*/
                 return true;
             else
                 return false;
@@ -169,8 +169,12 @@ namespace AutoDeleteProgram
                 if (DirectoryPath != null && IsDeletionTime(currentTime))
                 {
                     DirectoryInfo directoryInfo = new DirectoryInfo(DirectoryPath);
-                    int totalFilesCount = directoryInfo.GetFiles().Length + directoryInfo.GetDirectories().Length;
+                    int totalFilesCount = 0;
                     int finishedFilesCount = 0;
+
+                    totalFilesCount += Array.FindAll(directoryInfo.GetFiles(), file => file.LastWriteTime < DateTime.Today.AddDays(-1 * DeletionDateRange)).Length;
+                    totalFilesCount += Array.FindAll(directoryInfo.GetDirectories(), directory => directory.LastWriteTime < DateTime.Today.AddDays(-1 * DeletionDateRange)).Length;
+
                     Parallel.ForEach(directoryInfo.GetFiles(), file =>
                     {
                         if (DeletionByDaysActiveFlag == false)
@@ -182,7 +186,7 @@ namespace AutoDeleteProgram
                         string filePath = file.FullName;
                         bool isDeleted = true;
 
-                        if (file.LastWriteTime > DateTime.Today.AddDays(-1 * DeletionDateRange) && DeletionByDaysActiveFlag == true)
+                        if (file.LastWriteTime < DateTime.Today.AddDays(-1 * DeletionDateRange) && DeletionByDaysActiveFlag)
                         {
                             try
                             {
@@ -201,15 +205,15 @@ namespace AutoDeleteProgram
                             {
                                 DeletionLog.Add(CreateLogData(filePath, isDeleted, errorInfo));
                             }));
+
+                            DeleteByDaysWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
                         }
-                        DeleteByDaysWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
-                        Thread.Sleep(50);
                     });
                     Parallel.ForEach(directoryInfo.GetDirectories(), subDirectory =>
                     {
                         if (DeletionByDaysActiveFlag == false)
                         {
-                            File.AppendAllText(@"type your path", "Running Stopped");
+                            File.AppendAllText(@"C:\Users\jhlee98\Desktop\logtest.txt", "Running Stopped");
                             return;
                         }
 
@@ -217,7 +221,7 @@ namespace AutoDeleteProgram
                         string subDirectoryPath = subDirectory.FullName;
                         bool isDeleted = true;
 
-                        if (subDirectory.LastWriteTime > DateTime.Today.AddDays(-1 * DeletionDateRange) && DeletionByDaysActiveFlag == true)
+                        if (subDirectory.LastWriteTime < DateTime.Today.AddDays(-1 * DeletionDateRange) && DeletionByDaysActiveFlag)
                         {
                             try
                             {
@@ -236,12 +240,12 @@ namespace AutoDeleteProgram
                             {
                                 DeletionLog.Add(CreateLogData(subDirectoryPath, isDeleted, errorInfo));
                             }));
-                        }
-                        DeleteByDaysWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
-                        Thread.Sleep(50);
+
+                            DeleteByDaysWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
+                        }                  
                     });
                 }
-                Thread.Sleep(30000);//10 seconds
+                Thread.Sleep(30000);//30 seconds
             }
             EnableManualButton = true;
         }
@@ -315,6 +319,8 @@ namespace AutoDeleteProgram
             set => SetProperty(ref autoProcessPercent, value);
         }
 
+      //  private Datet
+
         ObservableCollection<LogData> deletionLog = null;
         public ObservableCollection<LogData> DeletionLog
         {
@@ -359,7 +365,7 @@ namespace AutoDeleteProgram
                 logData.CellColor = new SolidColorBrush(Color.FromRgb(255, 0, 0));
             }
             //가장 첫 인자를 csv파일 경로로 사용
-            AppendLogFile(@"type your path", logData.Log, logData.TimeStamp);
+            AppendLogFile(@"C:\Users\jhlee98\Desktop\logtest.txt", logData.Log, logData.TimeStamp);
         
             return logData;
         }
