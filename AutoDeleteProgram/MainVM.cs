@@ -58,11 +58,13 @@ namespace AutoDeleteProgram
             DeleteByPeriodWorker.DoWork += DeleteByPeriod_DoWork;
             DeleteByPeriodWorker.RunWorkerCompleted += DeleteByPeriod_DoWork_RunWorkerCompleted;
             DeleteByPeriodWorker.WorkerReportsProgress = true;
-            
+            DeleteByPeriodWorker.ProgressChanged += DeletionByPeriod_ProgressChanged;
+      
             DeleteByDaysWorker = new BackgroundWorker();
             DeleteByDaysWorker.DoWork += DeleteByDays_DoWork;
             DeleteByDaysWorker.RunWorkerCompleted += DeleteByDays_DoWork_RunWorkerCompleted;
             DeleteByDaysWorker.WorkerReportsProgress = true;
+            DeleteByDaysWorker.ProgressChanged += DeletionByDays_ProgressChanged;
         }
         private void DeleteByPeriod_DoWork(object sender, DoWorkEventArgs e)
         {
@@ -71,8 +73,9 @@ namespace AutoDeleteProgram
                 DateTime selectedTime = new DateTime(SelectedDateTo.Year, SelectedDateTo.Month, SelectedDateTo.Day, 23, 59, 59);
                 SelectedDateTo = selectedTime;
 
-                Thread.Sleep(100);
                 DirectoryInfo directoryInfo = new DirectoryInfo(DirectoryPath);
+                int totalFilesCount = directoryInfo.GetFiles().Length + directoryInfo.GetDirectories().Length;
+                int finishedFilesCount = 0;
                 Parallel.ForEach(directoryInfo.GetFiles(), file =>
                 {
                     string errorInfo = "";
@@ -98,6 +101,8 @@ namespace AutoDeleteProgram
                             DeletionLog.Add(CreateLogData(filePath, isDeleted, errorInfo));
                         }));                
                     }
+                    DeleteByPeriodWorker.ReportProgress((++finishedFilesCount)*100 / totalFilesCount);
+                    Thread.Sleep(50);
                 });           
                 Parallel.ForEach(directoryInfo.GetDirectories(), subDirectory =>
                 {
@@ -124,6 +129,8 @@ namespace AutoDeleteProgram
                             DeletionLog.Add(CreateLogData(subDirectoryPath, isDeleted, errorInfo));
                         }));
                     }
+                    DeleteByPeriodWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
+                    Thread.Sleep(50);
                 });     
             }
         }
@@ -132,88 +139,126 @@ namespace AutoDeleteProgram
             //DeleteByPeriodWorker.DoWork -= DeleteByPeriod_DoWork;
             //DeleteByPeriodWorker.RunWorkerCompleted -= DeleteByPeriod_DoWork_RunWorkerCompleted;
         }
+        private void DeletionByPeriod_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            ManualProgressPercent = e.ProgressPercentage;
+
+            if (ManualProgressPercent == 100)
+            {
+                ManualProgressPercent = 0;
+                EnableManualButton = true;
+            }
+            else
+                EnableManualButton = false;   
+        }
+        private bool IsDeletionTime(DateTime currentTime)
+        {
+            if (currentTime.Hour == 10)/*(currentTime.Hour == 0 && currentTime.Minute == 0)*/
+                return true;
+            else
+                return false;
+        }
         private void DeleteByDays_DoWork(object sender, DoWorkEventArgs e)
         {
-            DeletionActiveFlag = !DeletionActiveFlag;
-            if (DirectoryPath != null)
+            DeletionByDaysActiveFlag = !DeletionByDaysActiveFlag;
+            while(DeletionByDaysActiveFlag)
             {
-                Thread.Sleep(100);
-                DirectoryInfo directoryInfo = new DirectoryInfo(DirectoryPath);
-                Parallel.ForEach (directoryInfo.GetFiles(), file => 
-                {           
-                    if (DeletionActiveFlag == false)
-                    {
-                        return;
-                    }
-                     
-                    string errorInfo = "";
-                    string filePath = file.FullName;
-                    bool isDeleted = true;
-
-                    if (file.LastWriteTime > DateTime.Today.AddDays(-1 * DeletionDateRange))
-                    {
-                        try
-                        {
-                            file.Delete();
-                            if (File.Exists(filePath))
-                            {
-                                isDeleted = false;
-                            }
-                        }
-                        catch(Exception error)
-                        {
-                            errorInfo = error.ToString();
-                        }
-
-                        DispatcherService.Invoke((System.Action)(() =>
-                        {
-                            DeletionLog.Add(CreateLogData(filePath, isDeleted, errorInfo));
-                        }));
-                      
-                    }
-                });
-                Parallel.ForEach(directoryInfo.GetDirectories(), subDirectory =>
+                EnableManualButton = false;
+                DateTime currentTime = DateTime.Now;
+                
+                if (DirectoryPath != null && IsDeletionTime(currentTime))
                 {
-                    if (DeletionActiveFlag == false)
+                    DirectoryInfo directoryInfo = new DirectoryInfo(DirectoryPath);
+                    int totalFilesCount = directoryInfo.GetFiles().Length + directoryInfo.GetDirectories().Length;
+                    int finishedFilesCount = 0;
+                    Parallel.ForEach(directoryInfo.GetFiles(), file =>
                     {
-                        return;
-                    }
-                     
-                    string errorInfo = "";
-                    string subDirectoryPath = subDirectory.FullName;
-                    bool isDeleted = true;
-
-                    if (subDirectory.LastWriteTime > DateTime.Today.AddDays(-1 * DeletionDateRange))
-                    {                     
-                        try
+                        if (DeletionByDaysActiveFlag == false)
                         {
-                            subDirectory.Delete(true);
-                            if (File.Exists(subDirectoryPath))
+                            return;
+                        }
+
+                        string errorInfo = "";
+                        string filePath = file.FullName;
+                        bool isDeleted = true;
+
+                        if (file.LastWriteTime > DateTime.Today.AddDays(-1 * DeletionDateRange) && DeletionByDaysActiveFlag == true)
+                        {
+                            try
                             {
-                                isDeleted = false;
+                                file.Delete();
+                                if (File.Exists(filePath))
+                                {
+                                    isDeleted = false;
+                                }
                             }
+                            catch (Exception error)
+                            {
+                                errorInfo = error.ToString();
+                            }
+
+                            DispatcherService.Invoke((System.Action)(() =>
+                            {
+                                DeletionLog.Add(CreateLogData(filePath, isDeleted, errorInfo));
+                            }));
                         }
-                        catch(Exception error)
+                        DeleteByDaysWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
+                        Thread.Sleep(50);
+                    });
+                    Parallel.ForEach(directoryInfo.GetDirectories(), subDirectory =>
+                    {
+                        if (DeletionByDaysActiveFlag == false)
                         {
-                            errorInfo = error.ToString();
+                            File.AppendAllText(@"C:\Users\jhlee98\Desktop\logtest.txt", "Running Stopped");
+                            return;
                         }
 
-                        DispatcherService.Invoke((System.Action)(() =>
-                        {
-                            DeletionLog.Add(CreateLogData(subDirectoryPath, isDeleted, errorInfo));
-                        })); 
-                    }
-                });
+                        string errorInfo = "";
+                        string subDirectoryPath = subDirectory.FullName;
+                        bool isDeleted = true;
 
-                DeletionActiveFlag = false;
+                        if (subDirectory.LastWriteTime > DateTime.Today.AddDays(-1 * DeletionDateRange) && DeletionByDaysActiveFlag == true)
+                        {
+                            try
+                            {
+                                subDirectory.Delete(true);
+                                if (File.Exists(subDirectoryPath))
+                                {
+                                    isDeleted = false;
+                                }
+                            }
+                            catch (Exception error)
+                            {
+                                errorInfo = error.ToString();
+                            }
+
+                            DispatcherService.Invoke((System.Action)(() =>
+                            {
+                                DeletionLog.Add(CreateLogData(subDirectoryPath, isDeleted, errorInfo));
+                            }));
+                        }
+                        DeleteByDaysWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
+                        Thread.Sleep(50);
+                    });
+                }
+                Thread.Sleep(30000);//10 seconds
             }
+            EnableManualButton = true;
         }
         private void DeleteByDays_DoWork_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             //DeleteByPeriodWorker.DoWork -= DeleteByPeriod_DoWork;
             //DeleteByPeriodWorker.RunWorkerCompleted -= DeleteByPeriod_DoWork_RunWorkerCompleted;     
         }
+        private void DeletionByDays_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            AutoProgressPercent = e.ProgressPercentage;
 
+            if (AutoProgressPercent == 100)
+            {
+                AutoProgressPercent = 0;
+            }
+        }
         string directoryPath;
         public string DirectoryPath
         {
@@ -242,14 +287,32 @@ namespace AutoDeleteProgram
             set => SetProperty(ref deletionDateRange, value);
         }
 
-        private bool deletionActiveFlag = false;
-        public bool DeletionActiveFlag
+        private bool enableManualButton = true;
+        public bool EnableManualButton
         {
-            get => deletionActiveFlag;
-            set
-            {
-                SetProperty(ref deletionActiveFlag, value);
-            }
+            get => enableManualButton;
+            set => SetProperty(ref enableManualButton, value);
+
+        }
+        private bool deletionByDaysActiveFlag = false;
+        public bool DeletionByDaysActiveFlag
+        {
+            get => deletionByDaysActiveFlag;
+            set => SetProperty(ref deletionByDaysActiveFlag, value);
+        }
+
+        private int manualProgressPercent = 0;
+        public int ManualProgressPercent
+        {
+            get => manualProgressPercent;
+            set => SetProperty(ref manualProgressPercent, value);
+        }
+
+        private int autoProcessPercent = 0;
+        public int AutoProgressPercent
+        {
+            get => autoProcessPercent;
+            set => SetProperty(ref autoProcessPercent, value);
         }
 
         ObservableCollection<LogData> deletionLog = null;
@@ -296,7 +359,7 @@ namespace AutoDeleteProgram
                 logData.CellColor = new SolidColorBrush(Color.FromRgb(255, 0, 0));
             }
             //가장 첫 인자를 csv파일 경로로 사용
-            AppendLogFile(@"C:\Users\User\Desktop\logtest.txt", logData.Log, logData.TimeStamp);
+            AppendLogFile(@"C:\Users\jhlee98\Desktop\logtest.txt", logData.Log, logData.TimeStamp);
         
             return logData;
         }
@@ -326,10 +389,10 @@ namespace AutoDeleteProgram
                         DeleteByDaysWorker.RunWorkerAsync();
                     else
                     {
-                        if (DeletionActiveFlag)
-                            DeletionActiveFlag = false;
+                        if (DeletionByDaysActiveFlag)
+                            DeletionByDaysActiveFlag = false;
                         else
-                            DeletionActiveFlag = true;
+                            DeletionByDaysActiveFlag = true;
                     }
                     //Thread threadDeleteByDays = new Thread(DeleteByDays);
                     //threadDeleteByDays.IsBackground = true;

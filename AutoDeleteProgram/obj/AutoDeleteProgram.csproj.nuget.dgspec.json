@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\이종혁\\Pictures\\Desktop\\Auto_Delete_Application-main\\AutoDeleteProgram\\AutoDeleteProgram.csproj": {}
+    "C:\\Users\\jhlee98\\source\\repos\\AutoDeleteProgram\\AutoDeleteProgram\\AutoDeleteProgram.csproj": {}
   },
   "projects": {
-    "C:\\Users\\이종혁\\Pictures\\Desktop\\Auto_Delete_Application-main\\AutoDeleteProgram\\AutoDeleteProgram.csproj": {
+    "C:\\Users\\jhlee98\\source\\repos\\AutoDeleteProgram\\AutoDeleteProgram\\AutoDeleteProgram.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\이종혁\\Pictures\\Desktop\\Auto_Delete_Application-main\\AutoDeleteProgram\\AutoDeleteProgram.csproj",
+        "projectUniqueName": "C:\\Users\\jhlee98\\source\\repos\\AutoDeleteProgram\\AutoDeleteProgram\\AutoDeleteProgram.csproj",
         "projectName": "AutoDeleteProgram",
-        "projectPath": "C:\\Users\\이종혁\\Pictures\\Desktop\\Auto_Delete_Application-main\\AutoDeleteProgram\\AutoDeleteProgram.csproj",
-        "packagesPath": "C:\\Users\\이종혁\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\이종혁\\Pictures\\Desktop\\Auto_Delete_Application-main\\AutoDeleteProgram\\obj\\",
+        "projectPath": "C:\\Users\\jhlee98\\source\\repos\\AutoDeleteProgram\\AutoDeleteProgram\\AutoDeleteProgram.csproj",
+        "packagesPath": "C:\\Users\\jhlee98\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\jhlee98\\source\\repos\\AutoDeleteProgram\\AutoDeleteProgram\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\이종혁\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\jhlee98\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -60,7 +60,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.412\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.411\\RuntimeIdentifierGraph.json"
         }
       }
     }

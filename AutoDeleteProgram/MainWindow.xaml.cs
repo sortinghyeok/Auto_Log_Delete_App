@@ -36,13 +36,13 @@ namespace AutoDeleteProgram
             e.Cancel = true;
             Hide();
             //Test Code
-            File.AppendAllText(@"C:\Users\User\Desktop\logtest.txt", "Log Start"+Environment.NewLine);
+            File.AppendAllText(@"C:\Users\jhlee98\Desktop\logtest.txt", "Log Start"+Environment.NewLine);
             while (((MainVM)(DataContext)).DeleteByDaysWorker.IsBusy)
             {
                 System.Windows.Forms.Application.DoEvents();//내 시간..
             }
-            File.AppendAllText(@"C:\Users\User\Desktop\logtest.txt", "Background Finished, Program Exit" + Environment.NewLine);
-            Environment.Exit(0);
+            File.AppendAllText(@"C:\Users\jhlee98\Desktop\logtest.txt", "Background Finished, Program Exit" + Environment.NewLine);
+        
         }
     }
 }

@@ -4,17 +4,17 @@
 winexe
 C#
 .cs
-C:\Users\이종혁\Pictures\Desktop\Auto_Delete_Application-main\AutoDeleteProgram\obj\Debug\netcoreapp3.1\
+C:\Users\jhlee98\source\repos\AutoDeleteProgram\AutoDeleteProgram\obj\Debug\netcoreapp3.1\
 AutoDeleteProgram
 none
 false
 TRACE;DEBUG;NETCOREAPP;NETCOREAPP3_1;
-C:\Users\이종혁\Pictures\Desktop\Auto_Delete_Application-main\AutoDeleteProgram\App.xaml
+C:\Users\jhlee98\source\repos\AutoDeleteProgram\AutoDeleteProgram\App.xaml
 11407045341
 
 101011486530
 199-1336183941
 MainWindow.xaml;
 
-False
+True
 
