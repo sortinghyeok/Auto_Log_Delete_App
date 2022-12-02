@@ -8,19 +8,19 @@
     ".NETCoreApp,Version=v3.1": []
   },
   "packageFolders": {
-    "C:\\Users\\jhlee98\\.nuget\\packages\\": {}
+    "C:\\Users\\이종혁\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\jhlee98\\source\\repos\\AutoDeleteProgram\\AutoDeleteProgram\\AutoDeleteProgram.csproj",
+      "projectUniqueName": "C:\\Users\\이종혁\\Pictures\\Desktop\\AutoDelete_Git\\Auto_Log_Delete_App\\AutoDeleteProgram\\AutoDeleteProgram.csproj",
       "projectName": "AutoDeleteProgram",
-      "projectPath": "C:\\Users\\jhlee98\\source\\repos\\AutoDeleteProgram\\AutoDeleteProgram\\AutoDeleteProgram.csproj",
-      "packagesPath": "C:\\Users\\jhlee98\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\jhlee98\\source\\repos\\AutoDeleteProgram\\AutoDeleteProgram\\obj\\",
+      "projectPath": "C:\\Users\\이종혁\\Pictures\\Desktop\\AutoDelete_Git\\Auto_Log_Delete_App\\AutoDeleteProgram\\AutoDeleteProgram.csproj",
+      "packagesPath": "C:\\Users\\이종혁\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\이종혁\\Pictures\\Desktop\\AutoDelete_Git\\Auto_Log_Delete_App\\AutoDeleteProgram\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\jhlee98\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\이종혁\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -66,7 +66,7 @@
             "privateAssets": "none"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.411\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.412\\RuntimeIdentifierGraph.json"
       }
     }
   }

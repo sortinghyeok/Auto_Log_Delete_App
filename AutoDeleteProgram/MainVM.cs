@@ -153,7 +153,7 @@ namespace AutoDeleteProgram
         }
         private bool IsDeletionTime(DateTime currentTime)
         {
-            if (currentTime.Hour == 17)/*(currentTime.Hour == 0 && currentTime.Minute == 0)*/
+            if (currentTime.Hour == 22)/*(currentTime.Hour == 0 && currentTime.Minute == 0)*/
                 return true;
             else
                 return false;
@@ -186,7 +186,7 @@ namespace AutoDeleteProgram
                         string filePath = file.FullName;
                         bool isDeleted = true;
 
-                        if (file.LastWriteTime < DateTime.Today.AddDays(-1 * DeletionDateRange) && DeletionByDaysActiveFlag)
+                       if (file.LastWriteTime.Day <= DateTime.Today.AddDays(-1 * DeletionDateRange).Day && DeletionByDaysActiveFlag)
                         {
                             try
                             {
@@ -213,7 +213,7 @@ namespace AutoDeleteProgram
                     {
                         if (DeletionByDaysActiveFlag == false)
                         {
-                            File.AppendAllText(@"C:\Users\jhlee98\Desktop\logtest.txt", "Running Stopped");
+                            File.AppendAllText(@"C:\Users\이종혁\Pictures\Desktop\log.txt", "Running Stopped");
                             return;
                         }
 
@@ -221,7 +221,7 @@ namespace AutoDeleteProgram
                         string subDirectoryPath = subDirectory.FullName;
                         bool isDeleted = true;
 
-                        if (subDirectory.LastWriteTime < DateTime.Today.AddDays(-1 * DeletionDateRange) && DeletionByDaysActiveFlag)
+                        if (subDirectory.LastWriteTime.Day <= DateTime.Today.AddDays(-1 * DeletionDateRange).Day && DeletionByDaysActiveFlag)
                         {
                             try
                             {
@@ -245,7 +245,7 @@ namespace AutoDeleteProgram
                         }                  
                     });
                 }
-                Thread.Sleep(30000);//30 seconds
+                Thread.Sleep(60000);//30 seconds
             }
             EnableManualButton = true;
         }
@@ -284,7 +284,7 @@ namespace AutoDeleteProgram
             set => SetProperty(ref selectedDateTo, value);
         }
 
-        private int deletionDateRange = 7;
+        private int deletionDateRange = 2;
         public int DeletionDateRange
         {
             get => deletionDateRange;
@@ -365,7 +365,7 @@ namespace AutoDeleteProgram
                 logData.CellColor = new SolidColorBrush(Color.FromRgb(255, 0, 0));
             }
             //가장 첫 인자를 csv파일 경로로 사용
-            AppendLogFile(@"C:\Users\jhlee98\Desktop\logtest.txt", logData.Log, logData.TimeStamp);
+            AppendLogFile(@"C:\Users\이종혁\Pictures\Desktop\log.txt", logData.Log, logData.TimeStamp);
         
             return logData;
         }
