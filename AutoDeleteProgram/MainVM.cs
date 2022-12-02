@@ -209,7 +209,7 @@ namespace AutoDeleteProgram
                     {
                         if (DeletionByDaysActiveFlag == false)
                         {
-                            File.AppendAllText(@"C:\Users\jhlee98\Desktop\logtest.txt", "Running Stopped");
+                            File.AppendAllText(@"type your path", "Running Stopped");
                             return;
                         }
 
@@ -359,7 +359,7 @@ namespace AutoDeleteProgram
                 logData.CellColor = new SolidColorBrush(Color.FromRgb(255, 0, 0));
             }
             //가장 첫 인자를 csv파일 경로로 사용
-            AppendLogFile(@"C:\Users\jhlee98\Desktop\logtest.txt", logData.Log, logData.TimeStamp);
+            AppendLogFile(@"type your path", logData.Log, logData.TimeStamp);
         
             return logData;
         }
