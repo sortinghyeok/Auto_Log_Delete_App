@@ -57,7 +57,7 @@ namespace AutoDeleteProgram
             ToolStripMenuItem closeItem = new ToolStripMenuItem("Close");
             closeItem.Click += delegate (object click, EventArgs eventArgs)
             {
-                System.Windows.Application.Current.Shutdown();
+                Environment.Exit(0);
                 ni.Dispose();
             };
             menu.Items.Add(closeItem);

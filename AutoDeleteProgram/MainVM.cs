@@ -74,14 +74,25 @@ namespace AutoDeleteProgram
                 SelectedDateTo = selectedTime;
 
                 DirectoryInfo directoryInfo = new DirectoryInfo(DirectoryPath);
-                int totalFilesCount = directoryInfo.GetFiles().Length + directoryInfo.GetDirectories().Length;
+                int totalFilesCount = 0;
                 int finishedFilesCount = 0;
+
+                TimeSpan timeSpan = new TimeSpan(0, 0, 0);
+                totalFilesCount += Array.FindAll(directoryInfo.GetFiles(), file => DateTime.Compare(file.LastWriteTime + timeSpan, selectedDateTo + timeSpan) <= 0 && DateTime.Compare(file.LastWriteTime + timeSpan, selectedDateFrom + timeSpan) >= 0).Length;
+                totalFilesCount += Array.FindAll(directoryInfo.GetDirectories(), dir => DateTime.Compare(dir.LastWriteTime + timeSpan, selectedDateTo + timeSpan) <= 0 && DateTime.Compare(dir.LastWriteTime + timeSpan, selectedDateFrom + timeSpan) >= 0).Length;
+                
                 Parallel.ForEach(directoryInfo.GetFiles(), file =>
                 {
                     string errorInfo = "";
                     string filePath = file.FullName;
                     bool isDeleted = true;
-                    if (file.LastWriteTime >= SelectedDateFrom && file.LastWriteTime <= SelectedDateTo)
+
+                    DateTime lastWirteTime = file.LastWriteTime;
+                    DateTime modifiedTime = new DateTime(lastWirteTime.Year, lastWirteTime.Month, lastWirteTime.Day, 0, 0, 0);
+                    DateTime rangeLowerBound = new DateTime(SelectedDateFrom.Year, selectedDateFrom.Month, selectedDateFrom.Day, 0, 0, 0);
+                    DateTime rangeUpperBound = new DateTime(SelectedDateTo.Year, selectedDateTo.Month, selectedDateTo.Day, 0, 0, 0);
+
+                    if (DateTime.Compare(modifiedTime, rangeLowerBound) >= 0 && DateTime.Compare(modifiedTime, rangeUpperBound) <= 0)
                     {
                         try
                         {
@@ -99,9 +110,10 @@ namespace AutoDeleteProgram
                         DispatcherService.Invoke((System.Action)(() =>
                         {
                             DeletionLog.Add(CreateLogData(filePath, isDeleted, errorInfo));
-                        }));                
-                    }
-                    DeleteByPeriodWorker.ReportProgress((++finishedFilesCount)*100 / totalFilesCount);
+                        }));
+
+                        DeleteByPeriodWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
+                    }       
                     Thread.Sleep(50);
                 });           
                 Parallel.ForEach(directoryInfo.GetDirectories(), subDirectory =>
@@ -110,7 +122,12 @@ namespace AutoDeleteProgram
                     string subDirectoryPath = subDirectory.FullName;
                     bool isDeleted = true;
 
-                    if (subDirectory.LastWriteTime >= SelectedDateFrom && subDirectory.LastWriteTime <= SelectedDateTo)
+                    DateTime lastWirteTime = subDirectory.LastWriteTime;
+                    DateTime modifiedTime = new DateTime(lastWirteTime.Year, lastWirteTime.Month, lastWirteTime.Day, 0, 0, 0);
+                    DateTime rangeLowerBound = new DateTime(SelectedDateFrom.Year, selectedDateFrom.Month, selectedDateFrom.Day, 0, 0, 0);
+                    DateTime rangeUpperBound = new DateTime(SelectedDateTo.Year, selectedDateTo.Month, selectedDateTo.Day, 0, 0, 0);
+                    
+                    if(DateTime.Compare(modifiedTime, rangeLowerBound) >= 0 && DateTime.Compare(modifiedTime, rangeUpperBound) <= 0)
                     {
                         try
                         {
@@ -128,8 +145,8 @@ namespace AutoDeleteProgram
                         {
                             DeletionLog.Add(CreateLogData(subDirectoryPath, isDeleted, errorInfo));
                         }));
+                        DeleteByPeriodWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
                     }
-                    DeleteByPeriodWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
                     Thread.Sleep(50);
                 });     
             }
@@ -153,7 +170,7 @@ namespace AutoDeleteProgram
         }
         private bool IsDeletionTime(DateTime currentTime)
         {
-            if (currentTime.Hour == 22)/*(currentTime.Hour == 0 && currentTime.Minute == 0)*/
+            if (currentTime.Minute % 10 == 0)/*(currentTime.Hour == 0 && currentTime.Minute == 0)*/
                 return true;
             else
                 return false;
@@ -171,10 +188,17 @@ namespace AutoDeleteProgram
                     DirectoryInfo directoryInfo = new DirectoryInfo(DirectoryPath);
                     int totalFilesCount = 0;
                     int finishedFilesCount = 0;
+                    TimeSpan timeSpan = new TimeSpan(0, 0, 0);
 
-                    totalFilesCount += Array.FindAll(directoryInfo.GetFiles(), file => file.LastWriteTime < DateTime.Today.AddDays(-1 * DeletionDateRange)).Length;
-                    totalFilesCount += Array.FindAll(directoryInfo.GetDirectories(), directory => directory.LastWriteTime < DateTime.Today.AddDays(-1 * DeletionDateRange)).Length;
+                    totalFilesCount += Array.FindAll(directoryInfo.GetFiles(), file => DateTime.Compare(file.LastWriteTime + timeSpan, (DateTime.Now + timeSpan).AddDays(-1 * DeletionDateRange)) <= 0).Length;
+                    totalFilesCount += Array.FindAll(directoryInfo.GetDirectories(), dir => DateTime.Compare(dir.LastWriteTime + timeSpan, (DateTime.Now + timeSpan).AddDays(-1 * DeletionDateRange)) <= 0).Length;
 
+                    if (totalFilesCount == 0)
+                    {
+                        Thread.Sleep(30000);//10 seconds
+                        continue;
+                    }
+                      
                     Parallel.ForEach(directoryInfo.GetFiles(), file =>
                     {
                         if (DeletionByDaysActiveFlag == false)
@@ -186,7 +210,11 @@ namespace AutoDeleteProgram
                         string filePath = file.FullName;
                         bool isDeleted = true;
 
-                       if (file.LastWriteTime.Day <= DateTime.Today.AddDays(-1 * DeletionDateRange).Day && DeletionByDaysActiveFlag)
+                        DateTime lastWirteTime = file.LastWriteTime;
+                        DateTime modifiedTime = new DateTime(lastWirteTime.Year, lastWirteTime.Month, lastWirteTime.Day, 0, 0, 0);
+                        DateTime compareDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0).AddDays(-1*DeletionDateRange);
+
+                        if (DateTime.Compare(modifiedTime, compareDate) <= 0 && DeletionByDaysActiveFlag)
                         {
                             try
                             {
@@ -213,7 +241,6 @@ namespace AutoDeleteProgram
                     {
                         if (DeletionByDaysActiveFlag == false)
                         {
-                            File.AppendAllText(@"C:\Users\이종혁\Pictures\Desktop\log.txt", "Running Stopped");
                             return;
                         }
 
@@ -221,7 +248,11 @@ namespace AutoDeleteProgram
                         string subDirectoryPath = subDirectory.FullName;
                         bool isDeleted = true;
 
-                        if (subDirectory.LastWriteTime.Day <= DateTime.Today.AddDays(-1 * DeletionDateRange).Day && DeletionByDaysActiveFlag)
+                        DateTime lastWirteTime = subDirectory.LastWriteTime;
+                        DateTime modifiedTime = new DateTime(lastWirteTime.Year, lastWirteTime.Month, lastWirteTime.Day, 0, 0, 0);
+                        DateTime compareDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0).AddDays(-1 * DeletionDateRange);
+
+                        if (DateTime.Compare(modifiedTime, compareDate) <= 0 && DeletionByDaysActiveFlag)
                         {
                             try
                             {
@@ -243,9 +274,9 @@ namespace AutoDeleteProgram
 
                             DeleteByDaysWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
                         }                  
-                    });
+                    }); 
                 }
-                Thread.Sleep(60000);//30 seconds
+                Thread.Sleep(30000);//10 seconds
             }
             EnableManualButton = true;
         }
