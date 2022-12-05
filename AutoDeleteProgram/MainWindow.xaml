@@ -12,7 +12,8 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="1*"/>
-            <RowDefinition Height="2*"/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="1*"/>
             <RowDefinition Height="10*"/>
         </Grid.RowDefinitions>
 
@@ -22,44 +23,38 @@
                     <ColumnDefinition Width="3*"/>
                     <ColumnDefinition Width="1*"/>
                 </Grid.ColumnDefinitions>
-                <TextBox Grid.Column="0" VerticalAlignment="Center" FontSize="13" Margin="5,5,0,5" Text="{Binding DirectoryPath}"></TextBox>
-                <Button Margin="10,8,10,8" Content="경로 선택" Grid.Column="1" Command="{Binding SelectDirectory, IsAsync=True}"></Button>
+                <TextBox Grid.Column="0" Height="30" VerticalAlignment="Center" FontSize="13" Margin="5,5,5,5" Text="{Binding DeleteDirectoryPath}"></TextBox>
+                <Button Margin="0 ,5,10,5" Height="30" Content="삭제 경로 선택" Grid.Column="1" Command="{Binding SelectDeletionDirectory, IsAsync=True}"></Button>
             </Grid>
-            
         </Border>
-
-        <Border Grid.Row="1" BorderBrush ="Gray" BorderThickness="1">
+        <Border Grid.Row ="1" BorderBrush="Gray" BorderThickness="1">
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="2*"/>
-                    <RowDefinition Height="2*"/>
-                </Grid.RowDefinitions>
-
-                <Grid Grid.Row="0" VerticalAlignment="Center">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="4*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="4*"/>
-                    </Grid.ColumnDefinitions>
-                    <DatePicker Grid.Column="0" SelectedDate="{Binding SelectedDateFrom}" Margin="5,0,5,0"></DatePicker>
-                    <TextBlock Grid.Column="1" HorizontalAlignment="Center" FontSize="20"><Run Text="~"></Run></TextBlock>
-                    <DatePicker Grid.Column="2" SelectedDate="{Binding SelectedDateTo}" Margin="5,0,5,0"></DatePicker>
-                </Grid>
-
-                <Grid Grid.Row="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="3*"/>
-                        <ColumnDefinition Width="1*"/>
-                    </Grid.ColumnDefinitions>
-                    <ProgressBar Grid.Column="0" VerticalAlignment="Top" Height="30" Margin="5,0,5,0" Value="{Binding ManualProgressPercent}"></ProgressBar>
-                    <Button Grid.Column="1" VerticalAlignment="Top" Height="30" Command="{Binding DeleteFilesByPeriod, IsAsync=True}" IsEnabled="{Binding EnableManualButton}" Margin="0,0,10,0">
-                        <Run Text="파일 삭제"></Run>
-                    </Button>
-                </Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" Height="30" VerticalAlignment="Center" FontSize="13" Margin="5,5,5,5" Text="{Binding LogDirectoryPath}"></TextBox>
+                <Button Margin="0 ,5,10,5" Height="30" Content="로그 경로 선택" Grid.Column="1" Command="{Binding SelectLogDirectory, IsAsync=True}"></Button>
+            </Grid>
+        </Border>
+        <Border Grid.Row="2" BorderBrush ="Gray" BorderThickness="1">
+            <Grid VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*"/>
+                    <ColumnDefinition Width="0.5*"/>
+                    <ColumnDefinition Width="3*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+                <DatePicker Grid.Column="0" SelectedDate="{Binding SelectedDateFrom}" Margin="5,0,5,0"></DatePicker>
+                <TextBlock Grid.Column="1" HorizontalAlignment="Center" FontSize="20"><Run Text="~"></Run></TextBlock>
+                <DatePicker Grid.Column="2" SelectedDate="{Binding SelectedDateTo}" Margin="5,0,5,0"></DatePicker>
+                <Button Grid.Column="3" VerticalAlignment="Top" Height="30" Command="{Binding DeleteByPeriod, IsAsync=True}" IsEnabled="{Binding EnableManualButton}" Margin="0,0,10,0">
+                    <Run Text="파일 삭제"></Run>
+                </Button>
             </Grid>
         </Border>
 
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="3">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="1*"/>
@@ -68,22 +63,37 @@
                 </Grid.RowDefinitions>
                 <Grid Grid.Row="0" Margin="0, 5, 0, 5">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.5*"/>
-                        <ColumnDefinition Width="7.5*"/>
-                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="4*"/>
+                        <ColumnDefinition Width="4*"/>
+                        <ColumnDefinition Width="1*"/>
                     </Grid.ColumnDefinitions>
                     <TextBox Grid.Column="0" FontSize="13" Margin="5,0,5,0" VerticalAlignment="Center" Text="{Binding DeletionDateRange, IsAsync=True}"></TextBox>
-                    <TextBlock VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Column="1"><Run Text="일보다 이전 파일을 삭제합니다."></Run></TextBlock>
-                    <Button Grid.Column="3" VerticalAlignment="Stretch" Margin="0,0,10,0" Command="{Binding DeleteFilesByDays, IsAsync=True}">
+                    <TextBlock Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left"><Run Text="일"/><Run Language="ko-kr" Text=" 또는 그"/><Run Text=" 이전 파일을 삭제합니다."/></TextBlock>
+                    <Grid Grid.Column="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1.3*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="2*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBox Grid.Column ="0" VerticalAlignment="Center" Text="{Binding AutoDeletionHour}"></TextBox>
+                        <TextBlock Grid.Column ="1" VerticalAlignment="Center">
+                        <Run Text="시(0~23)"></Run>
+                        </TextBlock>
+                        <TextBox Grid.Column ="2" VerticalAlignment="Center" Text="{Binding AutoDeletionMinutes}"></TextBox>
+                        <TextBlock Grid.Column ="3" VerticalAlignment="Center">
+                        <Run Text="분에 자동삭제"></Run>
+                        </TextBlock>
+                    </Grid>
+                    <Button Grid.Column="3" VerticalAlignment="Stretch" Margin="0,0,10,0" Command="{Binding DeleteByDays, IsAsync=True}">
                         <Run Text="{Binding DeletionByDaysActiveFlag, Converter={StaticResource activeToggleConverter}}" />
                     </Button>
                 </Grid>
                 <Grid Grid.Row="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="3*"/>
-                        <ColumnDefinition Width="1*"/>
-                    </Grid.ColumnDefinitions>
-                    <ProgressBar Grid.Column="0" VerticalAlignment="Center" Height="30" Margin="5, 0, 10, 0" Value="{Binding AutoProgressPercent}"></ProgressBar>
+                    <ProgressBar Grid.Column="0" VerticalAlignment="Center" Height="30" Margin="5, 0, 10, 0" Value="{Binding ProgressPercent}"></ProgressBar>
+                    
                 </Grid>
                     
                 <Border Grid.Row="2" BorderBrush="Gray" BorderThickness="1" >

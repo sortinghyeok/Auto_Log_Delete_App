@@ -31,7 +31,7 @@ namespace AutoDeleteProgram
             DataContext = new MainVM(this);
             Closing += WindowClosing;
             noti = new NotifyIcon();
-            noti.Icon = new System.Drawing.Icon("../../../Asset/TempIcon.ico");
+            noti.Icon = new System.Drawing.Icon("../../../Asset/AutoDeleteIcon.ico");
             noti.Visible = true;
             noti.DoubleClick += delegate (object sender, EventArgs eventArgs)
             {
@@ -54,7 +54,7 @@ namespace AutoDeleteProgram
             };
             menu.Items.Add(openItem);
 
-            ToolStripMenuItem closeItem = new ToolStripMenuItem("Close");
+            ToolStripMenuItem closeItem = new ToolStripMenuItem("Exit");
             closeItem.Click += delegate (object click, EventArgs eventArgs)
             {
                 Environment.Exit(0);
@@ -70,12 +70,12 @@ namespace AutoDeleteProgram
             e.Cancel = true;
             Hide();
             //Test Code
-            File.AppendAllText(@"C:\Users\이종혁\Pictures\Desktop\log.txt", "Log Start"+Environment.NewLine);
+            File.AppendAllText(@"C:\Users\jhlee98\Desktop\logtest.txt", "Log Start"+Environment.NewLine);
             while (((MainVM)DataContext).DeleteByDaysWorker.IsBusy)
             {
                 System.Windows.Forms.Application.DoEvents();//내 시간..
             }
-            File.AppendAllText(@"C:\Users\이종혁\Pictures\Desktop\log.txt", "Background Finished, Program Exit" + Environment.NewLine);       
+            File.AppendAllText(@"C:\Users\jhlee98\Desktop\logtest.txt", "Background Finished, Program Exit" + Environment.NewLine);       
         }
     }
 }

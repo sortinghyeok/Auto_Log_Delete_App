@@ -58,119 +58,110 @@ namespace AutoDeleteProgram
             DeleteByPeriodWorker.DoWork += DeleteByPeriod_DoWork;
             DeleteByPeriodWorker.RunWorkerCompleted += DeleteByPeriod_DoWork_RunWorkerCompleted;
             DeleteByPeriodWorker.WorkerReportsProgress = true;
-            DeleteByPeriodWorker.ProgressChanged += DeletionByPeriod_ProgressChanged;
+            DeleteByPeriodWorker.ProgressChanged += DeletionProgressChanged;
       
             DeleteByDaysWorker = new BackgroundWorker();
             DeleteByDaysWorker.DoWork += DeleteByDays_DoWork;
             DeleteByDaysWorker.RunWorkerCompleted += DeleteByDays_DoWork_RunWorkerCompleted;
             DeleteByDaysWorker.WorkerReportsProgress = true;
-            DeleteByDaysWorker.ProgressChanged += DeletionByDays_ProgressChanged;
+            DeleteByDaysWorker.ProgressChanged += DeletionProgressChanged;
+        }
+        private void DeleteFilesProcess(FileInfo file ,string filePath, ref int finishedFilesCount, ref int totalFilesCount)
+        {
+            string errorInfo = "";
+            bool isDeleted = true;
+            try
+            {
+                file.Delete();
+                if (File.Exists(filePath))
+                {
+                    isDeleted = false;
+                }
+            }
+            catch (Exception error)
+            {
+                errorInfo = error.ToString();
+            }
+
+            DispatcherService.Invoke((System.Action)(() =>
+            {
+                DeletionLog.Add(CreateLogData(filePath, isDeleted, errorInfo));
+            }));
+        }
+        private void DeleteDirectoriesProcess(DirectoryInfo subDirectory, string subDirectoryPath, ref int finishedFilesCount, ref int totalFilesCount)
+        {
+            string errorInfo = "";
+            bool isDeleted = true;
+            try
+            {
+                subDirectory.Delete(true);
+                if (File.Exists(subDirectoryPath))
+                {
+                    isDeleted = false;
+                }
+            }
+            catch (Exception error)
+            {
+                errorInfo = error.ToString();
+            }
+            DispatcherService.Invoke((System.Action)(() =>
+            {
+                DeletionLog.Add(CreateLogData(subDirectoryPath, isDeleted, errorInfo));
+            }));
         }
         private void DeleteByPeriod_DoWork(object sender, DoWorkEventArgs e)
         {
-            if (DirectoryPath != null)
-            {
-                DateTime selectedTime = new DateTime(SelectedDateTo.Year, SelectedDateTo.Month, SelectedDateTo.Day, 23, 59, 59);
-                SelectedDateTo = selectedTime;
+            if (DeleteDirectoryPath == null)
+                return;
+            
+            DateTime selectedTime = new DateTime(SelectedDateTo.Year, SelectedDateTo.Month, SelectedDateTo.Day, 23, 59, 59);
+            SelectedDateTo = selectedTime;
 
-                DirectoryInfo directoryInfo = new DirectoryInfo(DirectoryPath);
-                int totalFilesCount = 0;
-                int finishedFilesCount = 0;
+            DirectoryInfo directoryInfo = new DirectoryInfo(DeleteDirectoryPath);
+            int totalFilesCount = 0;
+            int finishedFilesCount = 0;
 
-                TimeSpan timeSpan = new TimeSpan(0, 0, 0);
-                totalFilesCount += Array.FindAll(directoryInfo.GetFiles(), file => DateTime.Compare(file.LastWriteTime + timeSpan, selectedDateTo + timeSpan) <= 0 && DateTime.Compare(file.LastWriteTime + timeSpan, selectedDateFrom + timeSpan) >= 0).Length;
-                totalFilesCount += Array.FindAll(directoryInfo.GetDirectories(), dir => DateTime.Compare(dir.LastWriteTime + timeSpan, selectedDateTo + timeSpan) <= 0 && DateTime.Compare(dir.LastWriteTime + timeSpan, selectedDateFrom + timeSpan) >= 0).Length;
-                
-                Parallel.ForEach(directoryInfo.GetFiles(), file =>
-                {
-                    string errorInfo = "";
-                    string filePath = file.FullName;
-                    bool isDeleted = true;
+            TimeSpan timeSpan = new TimeSpan(0, 0, 0);
+            FileInfo[] files = directoryInfo.GetFiles();
+            DirectoryInfo[] subDirectories = directoryInfo.GetDirectories();
+            //해당 범위 안에 생성된 디렉토리와 파일 갯수를 확인
+            totalFilesCount += Array.FindAll(files, file => DateTime.Compare(file.LastWriteTime + timeSpan, selectedDateTo + timeSpan) <= 0 
+            && DateTime.Compare(file.LastWriteTime + timeSpan, selectedDateFrom + timeSpan) >= 0).Length;
+            totalFilesCount += Array.FindAll(subDirectories, dir => DateTime.Compare(dir.LastWriteTime + timeSpan, selectedDateTo + timeSpan) <= 0 
+            && DateTime.Compare(dir.LastWriteTime + timeSpan, selectedDateFrom + timeSpan) >= 0).Length;
 
-                    DateTime lastWirteTime = file.LastWriteTime;
-                    DateTime modifiedTime = new DateTime(lastWirteTime.Year, lastWirteTime.Month, lastWirteTime.Day, 0, 0, 0);
-                    DateTime rangeLowerBound = new DateTime(SelectedDateFrom.Year, selectedDateFrom.Month, selectedDateFrom.Day, 0, 0, 0);
-                    DateTime rangeUpperBound = new DateTime(SelectedDateTo.Year, selectedDateTo.Month, selectedDateTo.Day, 0, 0, 0);
+            DateTime rangeLowerBound = new DateTime(SelectedDateFrom.Year, selectedDateFrom.Month, selectedDateFrom.Day, 0, 0, 0);
+            DateTime rangeUpperBound = new DateTime(SelectedDateTo.Year, selectedDateTo.Month, selectedDateTo.Day, 0, 0, 0);
 
-                    if (DateTime.Compare(modifiedTime, rangeLowerBound) >= 0 && DateTime.Compare(modifiedTime, rangeUpperBound) <= 0)
-                    {
-                        try
-                        {
-                            file.Delete();
-                            if (File.Exists(filePath))
-                            {
-                                isDeleted = false;
-                            }
-                        }
-                        catch(Exception error)
-                        {
-                            errorInfo = error.ToString();
-                        }
+            Parallel.ForEach(files, file =>
+            {              
+                DateTime lastWriteDay = new DateTime(file.LastWriteTime.Year, file.LastWriteTime.Month, file.LastWriteTime.Day, 0, 0, 0);
 
-                        DispatcherService.Invoke((System.Action)(() =>
-                        {
-                            DeletionLog.Add(CreateLogData(filePath, isDeleted, errorInfo));
-                        }));
-
-                        DeleteByPeriodWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
-                    }       
-                    Thread.Sleep(50);
-                });           
-                Parallel.ForEach(directoryInfo.GetDirectories(), subDirectory =>
-                {
-                    string errorInfo = "";
-                    string subDirectoryPath = subDirectory.FullName;
-                    bool isDeleted = true;
-
-                    DateTime lastWirteTime = subDirectory.LastWriteTime;
-                    DateTime modifiedTime = new DateTime(lastWirteTime.Year, lastWirteTime.Month, lastWirteTime.Day, 0, 0, 0);
-                    DateTime rangeLowerBound = new DateTime(SelectedDateFrom.Year, selectedDateFrom.Month, selectedDateFrom.Day, 0, 0, 0);
-                    DateTime rangeUpperBound = new DateTime(SelectedDateTo.Year, selectedDateTo.Month, selectedDateTo.Day, 0, 0, 0);
+                if (!(DateTime.Compare(lastWriteDay, rangeLowerBound) >= 0 && DateTime.Compare(lastWriteDay, rangeUpperBound) <= 0))
+                    return;
                     
-                    if(DateTime.Compare(modifiedTime, rangeLowerBound) >= 0 && DateTime.Compare(modifiedTime, rangeUpperBound) <= 0)
-                    {
-                        try
-                        {
-                            subDirectory.Delete(true);
-                            if (File.Exists(subDirectoryPath))
-                            {
-                                isDeleted = false;
-                            }
-                        }
-                        catch (Exception error)
-                        {
-                            errorInfo = error.ToString();
-                        }
-                        DispatcherService.Invoke((System.Action)(() =>
-                        {
-                            DeletionLog.Add(CreateLogData(subDirectoryPath, isDeleted, errorInfo));
-                        }));
-                        DeleteByPeriodWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
-                    }
-                    Thread.Sleep(50);
-                });     
-            }
+                DeleteFilesProcess(file, file.FullName, ref finishedFilesCount, ref totalFilesCount);
+                DeleteByPeriodWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
+                Thread.Sleep(50);
+            });           
+            Parallel.ForEach(subDirectories, subDirectory =>
+            {
+                DateTime lastWriteDay = new DateTime(subDirectory.LastWriteTime.Year, subDirectory.LastWriteTime.Month, subDirectory.LastWriteTime.Day, 0, 0, 0);
+
+                if (!(DateTime.Compare(lastWriteDay, rangeLowerBound) >= 0 && DateTime.Compare(lastWriteDay, rangeUpperBound) <= 0))
+                    return;                           
+                       
+                DeleteDirectoriesProcess(subDirectory, subDirectory.FullName, ref finishedFilesCount, ref totalFilesCount);
+                DeleteByPeriodWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
+                Thread.Sleep(50);
+            });      
         }
         private void DeleteByPeriod_DoWork_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            //DeleteByPeriodWorker.DoWork -= DeleteByPeriod_DoWork;
-            //DeleteByPeriodWorker.RunWorkerCompleted -= DeleteByPeriod_DoWork_RunWorkerCompleted;
-        }
-        private void DeletionByPeriod_ProgressChanged(object sender, ProgressChangedEventArgs e)
-        {
-            ManualProgressPercent = e.ProgressPercentage;
+        {}
 
-            if (ManualProgressPercent == 100)
-            {
-                ManualProgressPercent = 0;
-                EnableManualButton = true;
-            }
-            else
-                EnableManualButton = false;   
-        }
         private bool IsDeletionTime(DateTime currentTime)
         {
-            if (currentTime.Minute % 10 == 0)/*(currentTime.Hour == 0 && currentTime.Minute == 0)*/
+            if (currentTime.Hour == AutoDeletionHour && currentTime.Minute == AutoDeletionMinutes)/*(currentTime.Hour == 0 && currentTime.Minute == 0)*/
                 return true;
             else
                 return false;
@@ -182,101 +173,63 @@ namespace AutoDeleteProgram
             {
                 EnableManualButton = false;
                 DateTime currentTime = DateTime.Now;
-                
-                if (DirectoryPath != null && IsDeletionTime(currentTime))
+
+                if (DeleteDirectoryPath == null || !IsDeletionTime(currentTime))
                 {
-                    DirectoryInfo directoryInfo = new DirectoryInfo(DirectoryPath);
-                    int totalFilesCount = 0;
-                    int finishedFilesCount = 0;
-                    TimeSpan timeSpan = new TimeSpan(0, 0, 0);
-
-                    totalFilesCount += Array.FindAll(directoryInfo.GetFiles(), file => DateTime.Compare(file.LastWriteTime + timeSpan, (DateTime.Now + timeSpan).AddDays(-1 * DeletionDateRange)) <= 0).Length;
-                    totalFilesCount += Array.FindAll(directoryInfo.GetDirectories(), dir => DateTime.Compare(dir.LastWriteTime + timeSpan, (DateTime.Now + timeSpan).AddDays(-1 * DeletionDateRange)) <= 0).Length;
-
-                    if (totalFilesCount == 0)
-                    {
-                        Thread.Sleep(30000);//10 seconds
-                        continue;
-                    }
-                      
-                    Parallel.ForEach(directoryInfo.GetFiles(), file =>
-                    {
-                        if (DeletionByDaysActiveFlag == false)
-                        {
-                            return;
-                        }
-
-                        string errorInfo = "";
-                        string filePath = file.FullName;
-                        bool isDeleted = true;
-
-                        DateTime lastWirteTime = file.LastWriteTime;
-                        DateTime modifiedTime = new DateTime(lastWirteTime.Year, lastWirteTime.Month, lastWirteTime.Day, 0, 0, 0);
-                        DateTime compareDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0).AddDays(-1*DeletionDateRange);
-
-                        if (DateTime.Compare(modifiedTime, compareDate) <= 0 && DeletionByDaysActiveFlag)
-                        {
-                            try
-                            {
-                                file.Delete();
-                                if (File.Exists(filePath))
-                                {
-                                    isDeleted = false;
-                                }
-                            }
-                            catch (Exception error)
-                            {
-                                errorInfo = error.ToString();
-                            }
-
-                            DispatcherService.Invoke((System.Action)(() =>
-                            {
-                                DeletionLog.Add(CreateLogData(filePath, isDeleted, errorInfo));
-                            }));
-
-                            DeleteByDaysWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
-                        }
-                    });
-                    Parallel.ForEach(directoryInfo.GetDirectories(), subDirectory =>
-                    {
-                        if (DeletionByDaysActiveFlag == false)
-                        {
-                            return;
-                        }
-
-                        string errorInfo = "";
-                        string subDirectoryPath = subDirectory.FullName;
-                        bool isDeleted = true;
-
-                        DateTime lastWirteTime = subDirectory.LastWriteTime;
-                        DateTime modifiedTime = new DateTime(lastWirteTime.Year, lastWirteTime.Month, lastWirteTime.Day, 0, 0, 0);
-                        DateTime compareDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0).AddDays(-1 * DeletionDateRange);
-
-                        if (DateTime.Compare(modifiedTime, compareDate) <= 0 && DeletionByDaysActiveFlag)
-                        {
-                            try
-                            {
-                                subDirectory.Delete(true);
-                                if (File.Exists(subDirectoryPath))
-                                {
-                                    isDeleted = false;
-                                }
-                            }
-                            catch (Exception error)
-                            {
-                                errorInfo = error.ToString();
-                            }
-
-                            DispatcherService.Invoke((System.Action)(() =>
-                            {
-                                DeletionLog.Add(CreateLogData(subDirectoryPath, isDeleted, errorInfo));
-                            }));
-
-                            DeleteByDaysWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
-                        }                  
-                    }); 
+                    Thread.Sleep(10000);//10 seconds
+                    continue;
                 }
-                Thread.Sleep(30000);//10 seconds
+                DirectoryInfo directoryInfo = new DirectoryInfo(DeleteDirectoryPath);
+                int totalFilesCount = 0;
+                int finishedFilesCount = 0;
+                TimeSpan timeSpan = new TimeSpan(0, 0, 0);
+                FileInfo[] files = directoryInfo.GetFiles();
+                DirectoryInfo[] subDirectories = directoryInfo.GetDirectories();
+
+                totalFilesCount += Array.FindAll(files, file => DateTime.Compare(file.LastWriteTime + timeSpan,
+                    (currentTime + timeSpan).AddDays(-1 * DeletionDateRange)) <= 0).Length;
+                totalFilesCount += Array.FindAll(subDirectories, dir => DateTime.Compare(dir.LastWriteTime + timeSpan,
+                    (currentTime + timeSpan).AddDays(-1 * DeletionDateRange)) <= 0).Length;
+
+                if (totalFilesCount == 0)
+                {
+                    Thread.Sleep(10000);//10 seconds
+                    continue;
+                }
+                File.AppendAllText(LogDirectoryPath, "삭제 시작 :" + DateTime.Now + " " + Environment.NewLine);
+
+                Parallel.ForEach(files, file =>
+                {
+                    if (!DeletionByDaysActiveFlag)
+                    {
+                        return;
+                    }
+                    DateTime modifiedTime = new DateTime(file.LastWriteTime.Year, file.LastWriteTime.Month, file.LastWriteTime.Day, 0, 0, 0);
+                    DateTime compareDate = new DateTime(currentTime.Year, currentTime.Month, currentTime.Day, 0, 0, 0).AddDays(-1 * DeletionDateRange);
+
+                    if (DateTime.Compare(modifiedTime, compareDate) <= 0 && DeletionByDaysActiveFlag)
+                    {
+                        DeleteFilesProcess(file, file.FullName, ref finishedFilesCount, ref totalFilesCount);
+                        DeleteByDaysWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
+                    }
+                });
+                Parallel.ForEach(subDirectories, subDirectory =>
+                {
+                    if (!DeletionByDaysActiveFlag)
+                    {
+                        return;
+                    }
+                    DateTime modifiedTime = new DateTime(subDirectory.LastWriteTime.Year, subDirectory.LastWriteTime.Month, subDirectory.LastWriteTime.Day, 0, 0, 0);
+                    DateTime compareDate = new DateTime(currentTime.Year, currentTime.Month, currentTime.Day, 0, 0, 0).AddDays(-1 * DeletionDateRange);
+
+                    if (DateTime.Compare(modifiedTime, compareDate) <= 0 && DeletionByDaysActiveFlag)
+                    {
+                        DeleteDirectoriesProcess(subDirectory, subDirectory.FullName, ref finishedFilesCount, ref totalFilesCount);
+                        DeleteByDaysWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
+                    }
+                });
+                File.AppendAllText(LogDirectoryPath, "삭제 종료 : " + DateTime.Now + " " + Environment.NewLine);
+                Thread.Sleep(10000);//10 seconds
             }
             EnableManualButton = true;
         }
@@ -285,22 +238,27 @@ namespace AutoDeleteProgram
             //DeleteByPeriodWorker.DoWork -= DeleteByPeriod_DoWork;
             //DeleteByPeriodWorker.RunWorkerCompleted -= DeleteByPeriod_DoWork_RunWorkerCompleted;     
         }
-        private void DeletionByDays_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        private void DeletionProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            AutoProgressPercent = e.ProgressPercentage;
+            ProgressPercent = e.ProgressPercentage;
 
-            if (AutoProgressPercent == 100)
+            if (ProgressPercent == 100)
             {
-                AutoProgressPercent = 0;
+                ProgressPercent = 0;
             }
         }
-        string directoryPath;
-        public string DirectoryPath
+        string deleteDirectoryPath;
+        public string DeleteDirectoryPath
         {
-            get => directoryPath;
-            set => SetProperty(ref directoryPath, value);
+            get => deleteDirectoryPath;
+            set => SetProperty(ref deleteDirectoryPath, value);
         }
-
+        string logDirectoryPath;
+        public string LogDirectoryPath
+        {
+            get => logDirectoryPath;
+            set => SetProperty(ref logDirectoryPath, value);
+        }
         private DateTime selectedDateFrom = DateTime.Now.AddDays(-7);
         public DateTime SelectedDateFrom
         {
@@ -315,7 +273,7 @@ namespace AutoDeleteProgram
             set => SetProperty(ref selectedDateTo, value);
         }
 
-        private int deletionDateRange = 2;
+        private int deletionDateRange = 1;
         public int DeletionDateRange
         {
             get => deletionDateRange;
@@ -336,21 +294,37 @@ namespace AutoDeleteProgram
             set => SetProperty(ref deletionByDaysActiveFlag, value);
         }
 
-        private int manualProgressPercent = 0;
-        public int ManualProgressPercent
+        private int progressPercent = 0;
+        public int ProgressPercent
         {
-            get => manualProgressPercent;
-            set => SetProperty(ref manualProgressPercent, value);
+            get => progressPercent;
+            set => SetProperty(ref progressPercent, value);
         }
 
-        private int autoProcessPercent = 0;
-        public int AutoProgressPercent
+        private int autoDeletionHour = 0;
+        public int AutoDeletionHour
         {
-            get => autoProcessPercent;
-            set => SetProperty(ref autoProcessPercent, value);
+            get => autoDeletionHour;
+            set {
+                if (Convert.ToInt32(value) < 24 && Convert.ToInt32(value) >= 0)
+                    SetProperty(ref autoDeletionHour, value);
+                else
+                    SetProperty(ref autoDeletionHour, 0);
+            } 
         }
 
-      //  private Datet
+        private int autoDeletionMinutes = 0;
+        public int AutoDeletionMinutes
+        {
+            get => autoDeletionMinutes;
+            set
+            {
+                if (Convert.ToInt32(value) < 60 && Convert.ToInt32(value) >= 0)
+                    SetProperty(ref autoDeletionMinutes, value);
+                else
+                    SetProperty(ref autoDeletionMinutes, 0);
+            }
+        }
 
         ObservableCollection<LogData> deletionLog = null;
         public ObservableCollection<LogData> DeletionLog
@@ -368,19 +342,6 @@ namespace AutoDeleteProgram
                 deletionLog = value;
             }
         }
-
-        public ICommand SelectDirectory
-        {
-            get => new RelayCommand(
-                () =>
-                {
-                    FolderBrowserDialog fbd = new FolderBrowserDialog();
-                    if (fbd.ShowDialog() == DialogResult.OK)
-                    {
-                        DirectoryPath = fbd.SelectedPath;
-                    }
-                });
-        }
         public LogData CreateLogData(string fileName, bool isDeleted, string errorInfo)
         {
             LogData logData = new LogData();
@@ -396,7 +357,7 @@ namespace AutoDeleteProgram
                 logData.CellColor = new SolidColorBrush(Color.FromRgb(255, 0, 0));
             }
             //가장 첫 인자를 csv파일 경로로 사용
-            AppendLogFile(@"C:\Users\이종혁\Pictures\Desktop\log.txt", logData.Log, logData.TimeStamp);
+            AppendLogFile(LogDirectoryPath, logData.Log, logData.TimeStamp);
         
             return logData;
         }
@@ -405,7 +366,31 @@ namespace AutoDeleteProgram
             string lineData = timeStamp + "\t" + LogInfo + "\t" + Environment.NewLine;         
             File.AppendAllText(logFilePath, lineData);
         }
-        public ICommand DeleteFilesByPeriod
+        public ICommand SelectDeletionDirectory
+        {
+            get => new RelayCommand(
+                () =>
+                {
+                    FolderBrowserDialog fbd = new FolderBrowserDialog();
+                    if (fbd.ShowDialog() == DialogResult.OK)
+                    {
+                        DeleteDirectoryPath = fbd.SelectedPath;
+                    }
+                });
+        }
+        public ICommand SelectLogDirectory
+        {
+            get => new RelayCommand(
+                () =>
+                {
+                    System.Windows.Forms.OpenFileDialog fbd = new System.Windows.Forms.OpenFileDialog();
+                    if (fbd.ShowDialog() == DialogResult.OK)
+                    {
+                        LogDirectoryPath = fbd.FileName;
+                    }
+                });
+        }
+        public ICommand DeleteByPeriod
         {
             get => new RelayCommand(
                 () =>
@@ -416,7 +401,7 @@ namespace AutoDeleteProgram
                     //threadDeleteByPeriod.Start();
                 });
         }
-        public ICommand DeleteFilesByDays
+        public ICommand DeleteByDays
         {
             get => new RelayCommand(
                 () =>
