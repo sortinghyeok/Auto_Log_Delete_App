@@ -132,7 +132,8 @@ namespace AutoDeleteProgram
 
             DateTime rangeLowerBound = new DateTime(SelectedDateFrom.Year, selectedDateFrom.Month, selectedDateFrom.Day, 0, 0, 0);
             DateTime rangeUpperBound = new DateTime(SelectedDateTo.Year, selectedDateTo.Month, selectedDateTo.Day, 0, 0, 0);
-
+            
+            File.AppendAllText(LogDirectoryPath, "매뉴얼 이용 삭제 시작 :" + DateTime.Now + " " + Environment.NewLine);
             Parallel.ForEach(files, file =>
             {              
                 DateTime lastWriteDay = new DateTime(file.LastWriteTime.Year, file.LastWriteTime.Month, file.LastWriteTime.Day, 0, 0, 0);
@@ -154,7 +155,10 @@ namespace AutoDeleteProgram
                 DeleteDirectoriesProcess(subDirectory, subDirectory.FullName, ref finishedFilesCount, ref totalFilesCount);
                 DeleteByPeriodWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
                 Thread.Sleep(50);
-            });      
+            });
+            File.AppendAllText(LogDirectoryPath, "매뉴얼 이용 삭제 종료 : " + DateTime.Now + " " + Environment.NewLine);
+
+            DeletingFile = "삭제 완료";
         }
         private void DeleteByPeriod_DoWork_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {}
@@ -196,7 +200,7 @@ namespace AutoDeleteProgram
                     Thread.Sleep(10000);//10 seconds
                     continue;
                 }
-                File.AppendAllText(LogDirectoryPath, "삭제 시작 :" + DateTime.Now + " " + Environment.NewLine);
+                File.AppendAllText(LogDirectoryPath, "자동 삭제 시작 :" + DateTime.Now + " " + Environment.NewLine);
 
                 Parallel.ForEach(files, file =>
                 {
@@ -212,6 +216,7 @@ namespace AutoDeleteProgram
                         DeleteFilesProcess(file, file.FullName, ref finishedFilesCount, ref totalFilesCount);
                         DeleteByDaysWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
                     }
+                    Thread.Sleep(50);
                 });
                 Parallel.ForEach(subDirectories, subDirectory =>
                 {
@@ -227,8 +232,10 @@ namespace AutoDeleteProgram
                         DeleteDirectoriesProcess(subDirectory, subDirectory.FullName, ref finishedFilesCount, ref totalFilesCount);
                         DeleteByDaysWorker.ReportProgress((++finishedFilesCount) * 100 / totalFilesCount);
                     }
+                    Thread.Sleep(50);
                 });
-                File.AppendAllText(LogDirectoryPath, "삭제 종료 : " + DateTime.Now + " " + Environment.NewLine);
+                File.AppendAllText(LogDirectoryPath, "자동 삭제 종료 : " + DateTime.Now + " " + Environment.NewLine);
+                DeletingFile = "삭제 완료";
                 Thread.Sleep(10000);//10 seconds
             }
             EnableManualButton = true;
@@ -241,7 +248,6 @@ namespace AutoDeleteProgram
         private void DeletionProgressChanged(object sender, ProgressChangedEventArgs e)
         {
             ProgressPercent = e.ProgressPercentage;
-
             if (ProgressPercent == 100)
             {
                 ProgressPercent = 0;
@@ -326,6 +332,13 @@ namespace AutoDeleteProgram
             }
         }
 
+        private string deletingFile = "삭제 중인 파일이 여기에 출력됩니다.";
+        public string DeletingFile
+        {
+            get => deletingFile;
+            set => SetProperty(ref deletingFile, value);
+        }
+
         ObservableCollection<LogData> deletionLog = null;
         public ObservableCollection<LogData> DeletionLog
         {
@@ -356,7 +369,8 @@ namespace AutoDeleteProgram
                 logData.Log = "Fail : " + errorInfo + ", Occurred from : " + fileName;
                 logData.CellColor = new SolidColorBrush(Color.FromRgb(255, 0, 0));
             }
-            //가장 첫 인자를 csv파일 경로로 사용
+
+            DeletingFile = fileName;
             AppendLogFile(LogDirectoryPath, logData.Log, logData.TimeStamp);
         
             return logData;

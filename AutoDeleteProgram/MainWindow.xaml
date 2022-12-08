@@ -92,8 +92,30 @@
                     </Button>
                 </Grid>
                 <Grid Grid.Row="1">
-                    <ProgressBar Grid.Column="0" VerticalAlignment="Center" Height="30" Margin="5, 0, 10, 0" Value="{Binding ProgressPercent}"></ProgressBar>
-                    
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="2*"/>
+                        <RowDefinition Height="1*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" BorderThickness="1" BorderBrush="Gray" Height="30" Margin="5, 0, 10, 0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.3*"/>
+                                <ColumnDefinition Width="7*"/>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="1*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="삭제 대상 : " Grid.Column="0" VerticalAlignment="Center" Margin="5,0,0,0" />
+                            <TextBlock Grid.Column="1" VerticalAlignment="Center">     
+                                <Run Text="{Binding DeletingFile}"></Run>
+                            </TextBlock>
+                            <TextBlock Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                <Run Text="{Binding ProgressPercent}"></Run>
+                            </TextBlock>
+                            <TextBlock Grid.Column="3" Text="% 진행" VerticalAlignment="Center" Margin="5,0,0,0"></TextBlock>
+                        </Grid>
+                    </Border>
+                    <ProgressBar Grid.Row="1" VerticalAlignment="Center" Height="30" Margin="5, 0, 10, 5" Value="{Binding ProgressPercent}"></ProgressBar>
                 </Grid>
                     
                 <Border Grid.Row="2" BorderBrush="Gray" BorderThickness="1" >

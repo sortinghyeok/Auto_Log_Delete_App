@@ -70,12 +70,10 @@ namespace AutoDeleteProgram
             e.Cancel = true;
             Hide();
             //Test Code
-            File.AppendAllText(@"C:\Users\jhlee98\Desktop\logtest.txt", "Log Start"+Environment.NewLine);
-            while (((MainVM)DataContext).DeleteByDaysWorker.IsBusy)
+            while (((MainVM)DataContext).DeleteByDaysWorker.IsBusy || ((MainVM)DataContext).DeleteByPeriodWorker.IsBusy)
             {
-                System.Windows.Forms.Application.DoEvents();//내 시간..
+                System.Windows.Forms.Application.DoEvents();
             }
-            File.AppendAllText(@"C:\Users\jhlee98\Desktop\logtest.txt", "Background Finished, Program Exit" + Environment.NewLine);       
         }
     }
 }
